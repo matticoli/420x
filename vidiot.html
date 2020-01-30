@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang='en'>
+<head>
+    <style>body{ margin:0 }</style>
+</head>
+<body>
+    <canvas id='gl'></canvas>
+    <br/>
+    <button onclick="getVideo()">Video</button>
+    <button onclick="stopVideo()">Freeze Video</button>
+    
+    <br />
+    <div style="display: inline-block; padding: 5px;">
+        <label for="brightness">Brightness</label>
+        <input style="position: relative; top: 8px" label="Brightness" type="range" min="0" max="200" value="0" class="slider" id="brightness">
+    </div>
+    <br />
+</body>
+<!-- vertex shader, as simple as possible -->
+<script id='vertex' type='x-shader/x-vertex'>
+    attribute vec2 a_position;
+    void main() {
+        gl_Position = vec4( a_position, 0., 1. );
+    }
+</script>
+<!-- fragment shader -->
+<script id='fragment' type='x-shader/x-fragment'>
+    #ifdef GL_ES
+    precision mediump float;
+    #endif
+    uniform float time;
+    uniform float brightness;
+    uniform vec2 resolution;
+    // GLSL gives us this for free... our first sampler2D automatically
+    // points to our first bound texture.
+    uniform sampler2D uSampler;
+    vec4 blur9(sampler2D image, vec2 uv, vec2 resolution, vec2 direction) {
+        vec4 color = vec4(0.0);
+        vec2 off1 = vec2(1.3846153846) * direction;
+        vec2 off2 = vec2(3.2307692308) * direction;
+        color += texture2D(image, uv) * 0.2270270270;
+        color += texture2D(image, uv + (off1 / resolution)) * 0.3162162162;
+        color += texture2D(image, uv - (off1 / resolution)) * 0.3162162162;
+        color += texture2D(image, uv + (off2 / resolution)) * 0.0702702703;
+        color += texture2D(image, uv - (off2 / resolution)) * 0.0702702703;
+        return color;
+    }
+    
+    void main() {
+        // texture2D lets us lookup a pixel in a texture by passing xy values from 0–1
+        // to get those normalized values we divide gl_FragCoord (measured in pixels) by our resolution
+        vec2 offset = 1. / resolution;
+        vec3 base = texture2D( uSampler, gl_FragCoord.xy / resolution).rgb;
+        vec3 lowerleft = texture2D( uSampler, gl_FragCoord.xy / resolution - offset).rgb;
+        vec3 upperright = texture2D( uSampler, gl_FragCoord.xy / resolution + offset).rgb;
+        gl_FragColor = vec4( vec3(brightness * (0.01 + base + lowerleft * .325 + upperright * .325)), 1.);
+        //gl_FragCoord = blur9( uSampler, gl_FragCoord.xy / resolution, resolution, vec2(2.) );
+    }
+</script>
+<script type='text/javascript'>
+    // "global" variables
+    let gl, uTime, uBrightness, img, texture,textureLoaded = false, program
+    window.onload = function() {
+        const canvas = document.getElementById( 'gl' )
+        gl = canvas.getContext( 'webgl' )
+        canvas.width = 256
+        canvas.height = 256
+        img = document.createElement( 'img' )
+        img.crossOrigin = 'Anonymous'
+        // img.src = './cat.jpg'
+        // getVideo();
+        img.onload = makeTexture
+        document.body.appendChild( img )
+        // create our canvas
+        greencanvas = document.createElement( 'canvas' )
+        // get a drawing context for our canvas
+        greenctx = greencanvas.getContext( '2d' )
+        // set our painting color
+        greenctx.fillStyle = 'green'
+        // draw our rectangle... 350x150 are the default canvas dimensions
+        greenctx.fillRect( 0,0,350,150 )
+        greenctx.fillStyle = 'red'
+        greenctx.fillRect( 125,50,50,50 )
+        // put the canvas on the page
+        // document.body.appendChild( greencanvas )
+        // define drawing area of canvas. bottom corner, width / height
+        gl.viewport( 0,0,gl.drawingBufferWidth, gl.drawingBufferHeight )
+        // create a buffer object to store vertices
+        const buffer = gl.createBuffer()
+        // point buffer at graphic context's ARRAY_BUFFER
+        gl.bindBuffer( gl.ARRAY_BUFFER, buffer )
+        const triangles = new Float32Array([
+        -1, -1,
+        1,  -1,
+        -1, 1,
+        -1, 1,
+        1, -1,
+        1, 1
+        ])
+        // initialize memory for buffer and populate it. Give
+        // open gl hint contents will not change dynamically.
+        gl.bufferData( gl.ARRAY_BUFFER, triangles, gl.STATIC_DRAW )
+        // create vertex shader
+        let shaderScript = document.getElementById('vertex')
+        let shaderSource = shaderScript.text
+        const vertexShader = gl.createShader( gl.VERTEX_SHADER )
+        gl.shaderSource( vertexShader, shaderSource );
+        gl.compileShader( vertexShader )
+        // create fragment shader
+        shaderScript = document.getElementById('fragment')
+        shaderSource = shaderScript.text
+        const fragmentShader = gl.createShader( gl.FRAGMENT_SHADER )
+        gl.shaderSource( fragmentShader, shaderSource );
+        gl.compileShader( fragmentShader )
+        console.log(gl.getShaderInfoLog(fragmentShader));
+        // create shader program
+        program = gl.createProgram()
+        gl.attachShader( program, vertexShader )
+        gl.attachShader( program, fragmentShader )
+        gl.linkProgram( program )
+        gl.useProgram( program )
+        /* ALL ATTRIBUTE/UNIFORM INITIALIZATION MUST COME AFTER 
+        CREATING/LINKING/USING THE SHADER PROGAM */
+        // find a pointer to the uniform "time" in our fragment shader
+        uTime = gl.getUniformLocation( program, 'time' ) 
+        uBrightness = gl.getUniformLocation( program, 'brightness' ) 
+        const uRes = gl.getUniformLocation( program, 'resolution' )
+        gl.uniform2f( uRes, gl.drawingBufferWidth, gl.drawingBufferHeight )
+        // get position attribute location in shader
+        const position = gl.getAttribLocation( program, 'a_position' )
+        // enable the attribute
+        gl.enableVertexAttribArray( position )
+        // this will point to the vertices in the last bound array buffer.
+        // In this example, we only use one array buffer, where we're storing 
+        // our vertices
+        gl.vertexAttribPointer( position, 2, gl.FLOAT, false, 0,0 )
+        render()
+    }
+
+    let video
+
+    function getVideo() {
+        video = document.createElement( 'video' )
+        navigator.mediaDevices.getUserMedia({
+            video:true
+        }).then( stream => { 
+            video.srcObject = stream
+            video.play()
+            makeTexture()
+        })
+        return video
+    }
+
+    function stopVideo() {
+        video.pause()
+        textureLoaded = false
+    }
+
+    function makeTexture() {
+        // create an OpenGL texture object
+        texture = gl.createTexture()
+        // this tells OpenGL which texture object to use for subsequent operations
+        gl.bindTexture( gl.TEXTURE_2D, texture )
+        // since canvas draws from the top and shaders draw from the bottom, we
+        // have to flip our canvas when using it as a shader.
+        gl.pixelStorei( gl.UNPACK_FLIP_Y_WEBGL, true )
+        // how to map when texture element is more than one pixel
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR )
+        // how to map when texture element is less than one pixel
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR )
+        // you must have these properties defined for the video texture to
+        // work correctly
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE )
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE )
+        // let our render loop know when the texture is ready
+        textureLoaded = true;
+    }
+    // keep track of time via incremental frame counter
+    let time = 0
+    function render() {
+        // schedules render to be called the next time the video card requests 
+        // a frame of video
+        window.requestAnimationFrame( render )
+        if( textureLoaded === true ) {
+            console.log(video);
+            // send texture data to GPU    
+            gl.texImage2D( 
+            gl.TEXTURE_2D,    // target: you will always want gl.TEXTURE_2D
+            0,                // level of detail: 0 is the base
+            gl.RGBA, gl.RGBA, // color formats
+            gl.UNSIGNED_BYTE, // type: the type of texture data; 0-255
+            video             // pixel source: could also be video or image
+            )
+            // draw triangles using the array buffer from index 0 to 6 (6 is count)
+            gl.drawArrays( gl.TRIANGLES, 0, 6 )
+        } else {
+            gl.texImage2D( 
+            gl.TEXTURE_2D,    // target: you will always want gl.TEXTURE_2D
+            0,                // level of detail: 0 is the base
+            gl.RGBA, gl.RGBA, // color formats
+            gl.UNSIGNED_BYTE, // type: the type of texture data; 0-255
+            img             // pixel source: could also be video or image
+            )
+            gl.drawArrays( gl.TRIANGLES, 0, 6 )
+
+        }
+        // update time on CPU and GPU
+        time++
+        gl.uniform1f( uTime, time )
+        let brightness = document.getElementById("brightness").value / 100.0;
+        // console.log(brightness + " " + time);
+        gl.uniform1f(uBrightness , brightness)
+        // draw triangles using the array buffer from index 0 to 6 (6 is count)
+        gl.drawArrays( gl.TRIANGLES, 0, 6 )
+    }
+</script>
+</html>
