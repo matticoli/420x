@@ -23,19 +23,21 @@
     <button onclick="getVideo()">Video</button>
     <button onclick="stopVideo()">Stop Video</button>
     
-    <div class="slider-container">
-        <label for="brightness">Invert</label>
-        <input type="checkbox" id="invert">
-    </div>
+    <!-- <div class="slider-container">
+        <label for="cinvert">Invert Color</label>
+        <input type="checkbox" id="cinvert">
+    </div> -->
     <br />
     <div class="slider-container">
         <label for="exposure">Exposure</label>
-        <input type="range" min="0" max="200" value="0" class="slider" id="exposure">
+        <input type="range" min="0" max="300" value="0" class="slider" id="exposure">
     </div>
     <br />
     <div class="slider-container">
         <label for="brightness">Brightness</label>
-        <input type="range" min="-100" max="200" value="0" class="slider" id="brightness">
+        <input type="range" min="-100" max="300" value="0" class="slider" id="brightness">
+        <label for="invert">Invert</label>
+        <input type="checkbox" id="invert">
     </div>
     <br />
     <div class="slider-container">
@@ -59,6 +61,21 @@
         <input type="range" min="1" max="10" value="1" class="slider" id="fy">
     </div>
     <br />
+    <div class="slider-container">
+        <hr />
+        <label for="colorize">Colorize</label>
+        <input type="checkbox" id="colorize">
+        <br />
+        <label for="red">R</label>
+        <input type="range" min="0" max="256" value="1" class="slider" id="red">
+        <br />
+        <label for="green">G</label>
+        <input type="range" min="0" max="256" value="1" class="slider" id="green">
+        <br />
+        <label for="blue">B</label>
+        <input type="range" min="0" max="256" value="1" class="slider" id="blue">
+        <br />
+    </div>
 </body>
 <!-- vertex shader, as simple as possible -->
 <script id='vertex' type='x-shader/x-vertex'>
@@ -75,7 +92,7 @@
     uniform float time;
     uniform float brightness, exposure;
     uniform float sinx, siny, fx, fy;
-    uniform float invert, xsync, ysync;
+    uniform float invert, xsync, ysync, cinvert, colorize, r, g, b;
     uniform vec2 resolution;
     // GLSL gives us this for free... our first sampler2D automatically
     // points to our first bound texture.
@@ -89,17 +106,19 @@
         vec3 base = exposure * texture2D( uSampler, p).rgb;
         vec3 color = base + sin(p.x * sinx + ((fx * time) * xsync)) * sin(p.y * siny + ((fy + time) * ysync));
 
-        vec4 final = vec4( vec3( (invert * brightness) + color), 1.);
-        gl_FragColor = final;
-        //vec3 lowerleft = texture2D( uSampler, gl_FragCoord.xy / resolution - offset).rgb;
-        //vec3 upperright = texture2D( uSampler, gl_FragCoord.xy / resolution + offset).rgb;
-        //gl_FragColor = vec4( vec3(brightness + invert + (0.01 + base + lowerleft * .325 + upperright * .325)), 1.);
-        //gl_FragCoord = blur9( uSampler, gl_FragCoord.xy / resolution, resolution, vec2(2.) );
+        vec3 final = vec3( (invert * brightness) * color);
+        float rr = 1., gg = 1., bb = 1.;
+        if(colorize > 0.) {
+            rr = abs(r);
+            gg = abs(g);
+            bb = abs(b);
+        }
+        gl_FragColor = vec4(rr * final.x, gg * final.y, bb * final.z, 1.);
     }
 </script>
 <script type='text/javascript'>
     // "global" variables
-    let gl, uTime, uBrightness, uExposure, uInvert, uX, uY, uXsyncx, uYsync, uFx, uFy, img, texture,textureLoaded = false, program
+    let gl, uTime, uBrightness, uExposure, uInvert, uX, uY, uXsyncx, uYsync, uFx, uFy, img, texture,textureLoaded = false, program, uCinvert, uColorize, uR, uG, uB
     window.onload = function() {
         const canvas = document.getElementById( 'gl' )
         gl = canvas.getContext( 'webgl' )
@@ -172,6 +191,11 @@
         uYsync = gl.getUniformLocation(program, 'ysync')
         uFx = gl.getUniformLocation(program, 'fx')
         uFy = gl.getUniformLocation(program, 'fy')
+        uCinvert = gl.getUniformLocation(program, 'cinvert')
+        uColorize = gl.getUniformLocation(program, 'colorize')
+        uR = gl.getUniformLocation(program, 'r')
+        uG = gl.getUniformLocation(program, 'g')
+        uB = gl.getUniformLocation(program, 'b')
         const uRes = gl.getUniformLocation( program, 'resolution' )
         gl.uniform2f( uRes, gl.drawingBufferWidth, gl.drawingBufferHeight )
         // get position attribute location in shader
@@ -265,6 +289,11 @@
         let ysync = document.getElementById('ysync').checked;
         let fx = document.getElementById('fx').value;
         let fy = document.getElementById('fy').value;
+        let cinvert = 0;
+        let colorize = document.getElementById('colorize').checked;
+        let red = document.getElementById('red').value;
+        let green = document.getElementById('green').value;
+        let blue = document.getElementById('blue').value;
 
         gl.uniform1f(uBrightness , brightness)
         gl.uniform1f(uExposure , exposure)
@@ -274,7 +303,12 @@
         gl.uniform1f(uXsync , xsync ? 0.0 : 1.0)
         gl.uniform1f(uYsync , ysync ? 0.0 : 1.0)
         gl.uniform1f(uFx , fx)
-        gl.uniform1f(uFy , fy)
+        gl.uniform1f(uCinvert , cinvert)
+        gl.uniform1f(uColorize , colorize ? 1.0 : 0.0)
+        console.log(red / 256.0 + " " + green + " " + blue)
+        gl.uniform1f(uR , red / 256.0)
+        gl.uniform1f(uG , green / 256.0)
+        gl.uniform1f(uB , blue / 256.0)
 
         // draw triangles using the array buffer from index 0 to 6 (6 is count)
         gl.drawArrays( gl.TRIANGLES, 0, 6 )
