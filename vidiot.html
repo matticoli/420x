@@ -1,18 +1,62 @@
 <!doctype html>
 <html lang='en'>
 <head>
-    <style>body{ margin:0 }</style>
+    <style>
+    body { 
+        margin:0 
+    }
+
+    .slider {
+        position: relative; 
+        top: 8px;
+    }
+
+    .slider-container {
+        display: inline-block; 
+        padding: 5px;
+    }
+    </style>
 </head>
 <body>
     <canvas id='gl'></canvas>
     <br/>
     <button onclick="getVideo()">Video</button>
-    <button onclick="stopVideo()">Freeze Video</button>
+    <button onclick="stopVideo()">Stop Video</button>
     
+    <div class="slider-container">
+        <label for="brightness">Invert</label>
+        <input type="checkbox" id="invert">
+    </div>
     <br />
-    <div style="display: inline-block; padding: 5px;">
+    <div class="slider-container">
+        <label for="exposure">Exposure</label>
+        <input type="range" min="0" max="200" value="0" class="slider" id="exposure">
+    </div>
+    <br />
+    <div class="slider-container">
         <label for="brightness">Brightness</label>
-        <input style="position: relative; top: 8px" label="Brightness" type="range" min="0" max="200" value="0" class="slider" id="brightness">
+        <input type="range" min="-100" max="200" value="0" class="slider" id="brightness">
+    </div>
+    <br />
+    <div class="slider-container">
+        <label for="sinx">Sin X</label>
+        <input type="range" min="-256" max="256" value="1" class="slider" id="sinx">
+        <label for="xsync">Sync</label>
+        <input type="checkbox" id="xsync" checked="true">
+        <br />
+        <label for="fx">Frequency X</label>
+        <input type="range" min="1" max="10" value="1" class="slider" id="fx">
+        <!-- <button onclick="document.getElementById('fx').value = 1">Zero</button> -->
+    </div>
+    <br />
+    <div class="slider-container">
+        <label for="siny">Sin Y</label>
+        <input type="range" min="-256" max="256" value="1" class="slider" id="siny">
+        <label for="ysync">Sync</label>
+        <input type="checkbox" id="ysync" checked="true">
+        <br />
+        <label for="fy">Frequency Y</label>
+        <input type="range" min="1" max="10" value="1" class="slider" id="fy">
     </div>
     <br />
 </body>
@@ -29,37 +73,33 @@
     precision mediump float;
     #endif
     uniform float time;
-    uniform float brightness;
+    uniform float brightness, exposure;
+    uniform float sinx, siny, fx, fy;
+    uniform float invert, xsync, ysync;
     uniform vec2 resolution;
     // GLSL gives us this for free... our first sampler2D automatically
     // points to our first bound texture.
     uniform sampler2D uSampler;
-    vec4 blur9(sampler2D image, vec2 uv, vec2 resolution, vec2 direction) {
-        vec4 color = vec4(0.0);
-        vec2 off1 = vec2(1.3846153846) * direction;
-        vec2 off2 = vec2(3.2307692308) * direction;
-        color += texture2D(image, uv) * 0.2270270270;
-        color += texture2D(image, uv + (off1 / resolution)) * 0.3162162162;
-        color += texture2D(image, uv - (off1 / resolution)) * 0.3162162162;
-        color += texture2D(image, uv + (off2 / resolution)) * 0.0702702703;
-        color += texture2D(image, uv - (off2 / resolution)) * 0.0702702703;
-        return color;
-    }
     
     void main() {
         // texture2D lets us lookup a pixel in a texture by passing xy values from 0–1
         // to get those normalized values we divide gl_FragCoord (measured in pixels) by our resolution
+        vec2 p = gl_FragCoord.xy / resolution;
         vec2 offset = 1. / resolution;
-        vec3 base = texture2D( uSampler, gl_FragCoord.xy / resolution).rgb;
-        vec3 lowerleft = texture2D( uSampler, gl_FragCoord.xy / resolution - offset).rgb;
-        vec3 upperright = texture2D( uSampler, gl_FragCoord.xy / resolution + offset).rgb;
-        gl_FragColor = vec4( vec3(brightness * (0.01 + base + lowerleft * .325 + upperright * .325)), 1.);
+        vec3 base = exposure * texture2D( uSampler, p).rgb;
+        vec3 color = base + sin(p.x * sinx + ((fx * time) * xsync)) * sin(p.y * siny + ((fy + time) * ysync));
+
+        vec4 final = vec4( vec3( (invert * brightness) + color), 1.);
+        gl_FragColor = final;
+        //vec3 lowerleft = texture2D( uSampler, gl_FragCoord.xy / resolution - offset).rgb;
+        //vec3 upperright = texture2D( uSampler, gl_FragCoord.xy / resolution + offset).rgb;
+        //gl_FragColor = vec4( vec3(brightness + invert + (0.01 + base + lowerleft * .325 + upperright * .325)), 1.);
         //gl_FragCoord = blur9( uSampler, gl_FragCoord.xy / resolution, resolution, vec2(2.) );
     }
 </script>
 <script type='text/javascript'>
     // "global" variables
-    let gl, uTime, uBrightness, img, texture,textureLoaded = false, program
+    let gl, uTime, uBrightness, uExposure, uInvert, uX, uY, uXsyncx, uYsync, uFx, uFy, img, texture,textureLoaded = false, program
     window.onload = function() {
         const canvas = document.getElementById( 'gl' )
         gl = canvas.getContext( 'webgl' )
@@ -124,6 +164,14 @@
         // find a pointer to the uniform "time" in our fragment shader
         uTime = gl.getUniformLocation( program, 'time' ) 
         uBrightness = gl.getUniformLocation( program, 'brightness' ) 
+        uExposure = gl.getUniformLocation( program, 'exposure' ) 
+        uInvert = gl.getUniformLocation(program, 'invert')
+        uX = gl.getUniformLocation(program, 'sinx')
+        uY = gl.getUniformLocation(program, 'siny')
+        uXsync = gl.getUniformLocation(program, 'xsync')
+        uYsync = gl.getUniformLocation(program, 'ysync')
+        uFx = gl.getUniformLocation(program, 'fx')
+        uFy = gl.getUniformLocation(program, 'fy')
         const uRes = gl.getUniformLocation( program, 'resolution' )
         gl.uniform2f( uRes, gl.drawingBufferWidth, gl.drawingBufferHeight )
         // get position attribute location in shader
@@ -182,7 +230,6 @@
         // a frame of video
         window.requestAnimationFrame( render )
         if( textureLoaded === true ) {
-            console.log(video);
             // send texture data to GPU    
             gl.texImage2D( 
             gl.TEXTURE_2D,    // target: you will always want gl.TEXTURE_2D
@@ -207,9 +254,28 @@
         // update time on CPU and GPU
         time++
         gl.uniform1f( uTime, time )
+
+        // Pass control uniforms
         let brightness = document.getElementById("brightness").value / 100.0;
-        // console.log(brightness + " " + time);
+        let exposure = document.getElementById("exposure").value / 100.0;
+        let x = document.getElementById('sinx').value;
+        let y = document.getElementById('siny').value;
+        let invert = document.getElementById('invert').checked;
+        let xsync = document.getElementById('xsync').checked;
+        let ysync = document.getElementById('ysync').checked;
+        let fx = document.getElementById('fx').value;
+        let fy = document.getElementById('fy').value;
+
         gl.uniform1f(uBrightness , brightness)
+        gl.uniform1f(uExposure , exposure)
+        gl.uniform1f(uInvert , invert ? -1.0 : 1.0)
+        gl.uniform1f(uX , x)
+        gl.uniform1f(uY , y)
+        gl.uniform1f(uXsync , xsync ? 0.0 : 1.0)
+        gl.uniform1f(uYsync , ysync ? 0.0 : 1.0)
+        gl.uniform1f(uFx , fx)
+        gl.uniform1f(uFy , fy)
+
         // draw triangles using the array buffer from index 0 to 6 (6 is count)
         gl.drawArrays( gl.TRIANGLES, 0, 6 )
     }
