@@ -3,7 +3,10 @@
 <head>
     <style>
     body { 
-        margin:0 
+        margin:0;
+        font-family: Arial, Helvetica, sans-serif;
+        color: white;
+        background-color: #222222;
     }
 
     .slider {
@@ -15,66 +18,137 @@
         display: inline-block; 
         padding: 5px;
     }
+    td {
+        padding: 20px;
+    }
+
+    .textCol {
+        vertical-align: top;
+        margin-left: 20px;
+    }
+
+    .nav {
+        background-color: rgb(91, 83, 115);
+        height: 5vh;
+        padding: 5px;
+        vertical-align: center;
+    }
+
+    .nav a {
+        color: whitesmoke;
+        display: block;
+        width: 100%;
+        text-decoration: none;;
+        height: 10px;
+        margin-top: calc(2.5vh - 7.5px);
+        font-family: Arial, Helvetica, sans-serif;
+    }
     </style>
 </head>
 <body>
-    <canvas id='gl'></canvas>
-    <br/>
-    <button onclick="getVideo()">Video</button>
-    <button onclick="stopVideo()">Stop Video</button>
-    
-    <!-- <div class="slider-container">
-        <label for="cinvert">Invert Color</label>
-        <input type="checkbox" id="cinvert">
-    </div> -->
-    <br />
-    <div class="slider-container">
-        <label for="exposure">Exposure</label>
-        <input type="range" min="0" max="300" value="0" class="slider" id="exposure">
+    <div class="nav">
+        <a href="./index.html"><b>< 420x Home</b></a>
     </div>
-    <br />
-    <div class="slider-container">
-        <label for="brightness">Brightness</label>
-        <input type="range" min="-100" max="300" value="0" class="slider" id="brightness">
-        <label for="invert">Invert</label>
-        <input type="checkbox" id="invert">
-    </div>
-    <br />
-    <div class="slider-container">
-        <label for="sinx">Sin X</label>
-        <input type="range" min="-256" max="256" value="1" class="slider" id="sinx">
-        <label for="xsync">Sync</label>
-        <input type="checkbox" id="xsync" checked="true">
-        <br />
-        <label for="fx">Frequency X</label>
-        <input type="range" min="1" max="10" value="1" class="slider" id="fx">
-        <!-- <button onclick="document.getElementById('fx').value = 1">Zero</button> -->
-    </div>
-    <br />
-    <div class="slider-container">
-        <label for="siny">Sin Y</label>
-        <input type="range" min="-256" max="256" value="1" class="slider" id="siny">
-        <label for="ysync">Sync</label>
-        <input type="checkbox" id="ysync" checked="true">
-        <br />
-        <label for="fy">Frequency Y</label>
-        <input type="range" min="1" max="10" value="1" class="slider" id="fy">
-    </div>
-    <br />
-    <div class="slider-container">
-        <hr />
-        <label for="colorize">Colorize</label>
-        <input type="checkbox" id="colorize">
-        <br />
-        <label for="red">R</label>
-        <input type="range" min="0" max="256" value="1" class="slider" id="red">
-        <br />
-        <label for="green">G</label>
-        <input type="range" min="0" max="256" value="1" class="slider" id="green">
-        <br />
-        <label for="blue">B</label>
-        <input type="range" min="0" max="256" value="1" class="slider" id="blue">
-        <br />
+    <table>
+        <tr>
+            <td >
+                <canvas id='gl'></canvas>
+            </td>
+            <td>
+            <br/>
+            <button onclick="getVideo()">Video</button>
+            <button onclick="stopVideo()">Stop Video</button>
+            <!-- <button onclick="initAudio()">Audio</button>
+            <button onclick="() => {console.log(analyser.get(frequencyData))}">AudioDebug</button> -->
+            <br/>
+            <div class="slider-container">
+                <label for="audiox">Audio X Effect</label>
+                <input type="range" min="0" max="100" value="0" class="slider" id="audiox">
+            </div>
+            <br/>
+            <div class="slider-container">
+                <label for="audioy">Audio Y Effect</label>
+                <input type="range" min="0" max="100" value="0" class="slider" id="audioy">
+            </div>
+            <!-- <div class="slider-container">
+                <label for="cinvert">Invert Color</label>
+                <input type="checkbox" id="cinvert">
+            </div> -->
+            <br />
+            <div style="display: inline-block">
+                <audio controls id="myAudio" src="./assets/GranBatalla.mp3" type="audio/mpeg"></audio>
+                <span id="audioInfo"></span>
+                <br />
+                <i>Track: Gran Batalla by Matthew Pablo</i>
+                <hr />
+            </div>
+            <br />
+            <div class="slider-container">
+                <label for="exposure">Exposure</label>
+                <input type="range" min="0" max="300" value="0" class="slider" id="exposure">
+            </div>
+            <br />
+            <div class="slider-container">
+                <label for="brightness">Brightness</label>
+                <input type="range" min="-100" max="300" value="0" class="slider" id="brightness">
+                <label for="invert">Invert</label>
+                <input type="checkbox" id="invert">
+            </div>
+            <br />
+            <div class="slider-container">
+                <label for="sinx">Sin X</label>
+                <input type="range" min="-256" max="256" value="1" class="slider" id="sinx">
+                <label for="xsync">Sync</label>
+                <input type="checkbox" id="xsync" checked="true">
+                <br />
+                <label for="fx">Frequency X</label>
+                <input type="range" min="1" max="10" value="1" class="slider" id="fx">
+                <!-- <button onclick="document.getElementById('fx').value = 1">Zero</button> -->
+            </div>
+            <br />
+            <div class="slider-container">
+                <label for="siny">Sin Y</label>
+                <input type="range" min="-256" max="256" value="1" class="slider" id="siny">
+                <label for="ysync">Sync</label>
+                <input type="checkbox" id="ysync" checked="true">
+                <br />
+                <label for="fy">Frequency Y</label>
+                <input type="range" min="1" max="10" value="1" class="slider" id="fy">
+            </div>
+            <br />
+            <div class="slider-container">
+                <hr />
+                <label for="colorize">Colorize</label>
+                <input type="checkbox" id="colorize">
+                <br />
+                <label for="red">R</label>
+                <input type="range" min="0" max="256" value="1" class="slider" id="red">
+                <br />
+                <label for="green">G</label>
+                <input type="range" min="0" max="256" value="1" class="slider" id="green">
+                <br />
+                <label for="blue">B</label>
+                <input type="range" min="0" max="256" value="1" class="slider" id="blue">
+                <br />
+            </div>
+        </td>
+        <td class="textCol">
+            <h1>Vidiot Simulation</h1>
+            <h3>Demo</h3>
+            <iframe width="400" height="200" src="https://www.youtube.com/embed/4Y9U5CwoIUk" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+            <h3>Reference</h3>
+            <iframe width="400" height="200" src="https://www.youtube.com/embed/ccGexRnQXuw" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        </td>
+       </tr>
+    </table>
+    <div style="padding-left: 4vw; padding-right: 4vw;">
+        <h3>Aesthetic and Feedback</h3>
+        <p>
+        My primary goal when developing the UI was to emulate the basic features of crossing vertical and horizontal lines, sync, and color with audio and video input. While experimenting with the vidiot, we found one of the most enjoyable aspects to be patching in music and seeing how the visuals reacted to different tracks. While relatively simple, the shader allows for a wide range of visuals using just vertical and horizontal bars scrolling across the screen. These are layered over the webcam video feed, with distortion added in reaction to the music based on basic fft analysis and a weighted average of the initial x/y value with the sine of the coordinate multiplied by the frequency from the audio analyser at the given time.
+        </p>
+        <p>
+        Upon showing the demo to a classmate...
+        </p>
     </div>
 </body>
 <!-- vertex shader, as simple as possible -->
@@ -92,7 +166,7 @@
     uniform float time;
     uniform float brightness, exposure;
     uniform float sinx, siny, fx, fy;
-    uniform float invert, xsync, ysync, cinvert, colorize, r, g, b;
+    uniform float invert, xsync, ysync, cinvert, colorize, r, g, b, f, ax, ay;
     uniform vec2 resolution;
     // GLSL gives us this for free... our first sampler2D automatically
     // points to our first bound texture.
@@ -104,6 +178,8 @@
         vec2 p = gl_FragCoord.xy / resolution;
         vec2 offset = 1. / resolution;
         vec3 base = exposure * texture2D( uSampler, p).rgb;
+        p.x = (1. - ax)* p.x + (ax * sin(p.x + f));
+        p.y = (1. - ay) * p.y + (ay * sin(p.y + f));
         vec3 color = base + sin(p.x * sinx + ((fx * time) * xsync)) * sin(p.y * siny + ((fy + time) * ysync));
 
         vec3 final = vec3( (invert * brightness) * color);
@@ -118,12 +194,13 @@
 </script>
 <script type='text/javascript'>
     // "global" variables
-    let gl, uTime, uBrightness, uExposure, uInvert, uX, uY, uXsyncx, uYsync, uFx, uFy, img, texture,textureLoaded = false, program, uCinvert, uColorize, uR, uG, uB
+    let gl, uTime, uBrightness, uExposure, uInvert, uX, uY, uXsyncx, uYsync, uFx, uFy, uF, img, texture,textureLoaded = false, program, uCinvert, uColorize, uR, uG, uB;
+    let analyser, frequencyData, uAx, uAy;
     window.onload = function() {
         const canvas = document.getElementById( 'gl' )
         gl = canvas.getContext( 'webgl' )
-        canvas.width = 256
-        canvas.height = 256
+        canvas.width = 512
+        canvas.height = 512
         img = document.createElement( 'img' )
         img.crossOrigin = 'Anonymous'
         // img.src = './cat.jpg'
@@ -196,6 +273,9 @@
         uR = gl.getUniformLocation(program, 'r')
         uG = gl.getUniformLocation(program, 'g')
         uB = gl.getUniformLocation(program, 'b')
+        uF = gl.getUniformLocation(program, 'f')
+        uAx = gl.getUniformLocation(program, 'ax')
+        uAy = gl.getUniformLocation(program, 'ay')
         const uRes = gl.getUniformLocation( program, 'resolution' )
         gl.uniform2f( uRes, gl.drawingBufferWidth, gl.drawingBufferHeight )
         // get position attribute location in shader
@@ -206,7 +286,29 @@
         // In this example, we only use one array buffer, where we're storing 
         // our vertices
         gl.vertexAttribPointer( position, 2, gl.FLOAT, false, 0,0 )
+        initAudio()
         render()
+    }
+
+    function initAudio() {
+        var audio = document.getElementById('myAudio');
+        // navigator.mediaDevices.getUserMedia({
+        //     audio:true
+        // }).then( stream => { 
+        //     audio.srcObject = stream
+            var ctx = new AudioContext();
+            var audioSrc = ctx.createMediaElementSource(audio);
+            analyser = ctx.createAnalyser();
+            analyser.fftSize = 2048;
+            // we have to connect the MediaElementSource with the analyser 
+            audioSrc.connect(analyser);
+            analyser.connect(ctx.destination)
+            // audio.play()
+            // we could configure the analyser: e.g. analyser.fftSize (for further infos read the spec)
+            
+            // frequencyBinCount tells you how many values you'll receive from the analyser
+            frequencyData = new Uint8Array(analyser.frequencyBinCount);
+        // })
     }
 
     let video
@@ -294,6 +396,8 @@
         let red = document.getElementById('red').value;
         let green = document.getElementById('green').value;
         let blue = document.getElementById('blue').value;
+        let ax = document.getElementById('audiox').value;
+        let ay = document.getElementById('audioy').value;
 
         gl.uniform1f(uBrightness , brightness)
         gl.uniform1f(uExposure , exposure)
@@ -305,11 +409,14 @@
         gl.uniform1f(uFx , fx)
         gl.uniform1f(uCinvert , cinvert)
         gl.uniform1f(uColorize , colorize ? 1.0 : 0.0)
-        console.log(red / 256.0 + " " + green + " " + blue)
         gl.uniform1f(uR , red / 256.0)
         gl.uniform1f(uG , green / 256.0)
         gl.uniform1f(uB , blue / 256.0)
-
+        console.log(analyser.getByteFrequencyData(frequencyData));
+        document.getElementById("audioInfo").innerHTML = frequencyData[1] / 200.0;
+        gl.uniform1f(uF , frequencyData[1] / 200.0)
+        gl.uniform1f(uAx , ax / 100.0)
+        gl.uniform1f(uAy , ay / 100.0)
         // draw triangles using the array buffer from index 0 to 6 (6 is count)
         gl.drawArrays( gl.TRIANGLES, 0, 6 )
     }
