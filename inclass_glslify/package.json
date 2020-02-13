@@ -1,0 +1,19 @@
+{
+  "name": "inclass_glslify",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "dependencies": {
+    "browserify": "^16.5.0",
+    "glsl-ascii-filter": "^1.0.1",
+    "glsl-noise": "0.0.0",
+    "glslify": "^7.0.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "compile": "browserify -t glslify main.js -o bundle.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}
