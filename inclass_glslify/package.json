@@ -12,6 +12,7 @@
   "devDependencies": {},
   "scripts": {
     "compile": "browserify -t glslify main.js -o bundle.js",
+    "dev": "npx budo main.js:bundle.js --live -- -t glslify",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
