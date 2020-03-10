@@ -38,6 +38,8 @@
   uniform float time;
   uniform float feedbackAmount;
   uniform vec2  resolution;
+  uniform float speed;
+  uniform float feedbackControl;
   
   // for our live video feed
   uniform sampler2D videoTexture;
@@ -51,22 +53,38 @@
     
     // our final output is a combination of the live video signal
     // and our feedback
-    gl_FragColor = vec4( (video * .125 + prior * feedbackAmount), 1. );
+    gl_FragColor = vec4( (video * .125 + prior * feedbackAmount * feedbackControl), 1. );
   }
 </script>
+
+<script src="./dat.gui.js"></script>
 
   <script type='text/javascript'>
   
     // kinda global variables... upvalues to each closure of each function in this script tag
-    let gl, uTime, uRes, drawProgram, videoTexture
+    let gl, uTime, uRes, drawProgram, videoTexture, uSpeed, uFeedbackControl
     let feedbackProgram, uVideoTexture, uFeedbackTexture, uFeedback, textureBack, textureFront, textureLoaded,video
 
     const size = 512
+
+    let CustomGUI = function() {
+      this.feedback = 1.0;
+      this.stutter = false;
+      this.chance = 0.0;
+    };
+    let text, gui;
+
     window.onload = function() {
       const canvas = document.getElementById( 'gl' )
       gl = canvas.getContext( 'webgl' )
       canvas.width = canvas.height = size
       
+      text = new CustomGUI();
+      gui = new dat.GUI();
+      gui.add(text, 'feedback', 0.92, 1.08);
+      gui.add(text, 'stutter');
+      gui.add(text, 'chance', 0, 1);
+
       // define drawing area of webgl canvas. bottom corner, width / height
       // XXX can't remember why we need the *2!
       gl.viewport( 0,0,gl.drawingBufferWidth*2, gl.drawingBufferHeight*2 )
@@ -124,6 +142,11 @@
 
       uFeedback = gl.getUniformLocation( feedbackProgram, 'feedbackAmount' )
       gl.uniform1f( uFeedback, .925 )
+
+      uFeedbackControl = gl.getUniformLocation( feedbackProgram, 'feedbackControl' )
+
+      uFeedback = gl.getUniformLocation( feedbackProgram, 'speed' )
+      gl.uniform1f( uSpeed, .5 )
 
       // find a pointer to the uniform "time" in our fragment shader
       uTime = gl.getUniformLocation( feedbackProgram, 'time' )
@@ -245,6 +268,10 @@ function render() {
   
   // use our feedback shader
   gl.useProgram( feedbackProgram )  
+  console.log(text.speed);
+  gl.uniform1f( uSpeed, text.speed )
+  gl.uniform1f( uFeedbackControl, text.feedback )
+
   // update time on CPU and GPU
   time++
   gl.uniform1f( uTime, time )     
@@ -272,10 +299,13 @@ function render() {
   // run shader
   gl.drawArrays( gl.TRIANGLES, 0, 6 )
 
-  // swap our front and back textures
-  let tmp = textureFront
-  textureFront = textureBack
-  textureBack = tmp
+
+  if(!text.stutter || Math.random() > text.chance) {
+    // swap our front and back textures
+    let tmp = textureFront
+    textureFront = textureBack
+    textureBack = tmp
+  }
 
   // use the default framebuffer object by passing null
   gl.bindFramebuffer( gl.FRAMEBUFFER, null )
