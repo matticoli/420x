@@ -36,6 +36,7 @@
   #endif
 
   uniform float time;
+  uniform float drip;
   uniform float feedbackAmount;
   uniform vec2  resolution;
   uniform float speed;
@@ -49,7 +50,7 @@
   void main() {
     vec2 pos = gl_FragCoord.xy / resolution;
     vec3 video = texture2D( videoTexture, pos ).rgb;
-    vec3 prior = texture2D( feedbackTexture, pos ).rgb;
+    vec3 prior = texture2D( feedbackTexture, pos + (.02 * drip) ).rgb;
     
     // our final output is a combination of the live video signal
     // and our feedback
@@ -62,7 +63,7 @@
   <script type='text/javascript'>
   
     // kinda global variables... upvalues to each closure of each function in this script tag
-    let gl, uTime, uRes, drawProgram, videoTexture, uSpeed, uFeedbackControl
+    let gl, uTime, uRes, drawProgram, videoTexture, uSpeed, uFeedbackControl, uDrip
     let feedbackProgram, uVideoTexture, uFeedbackTexture, uFeedback, textureBack, textureFront, textureLoaded,video
 
     const size = 512
@@ -71,6 +72,7 @@
       this.feedback = 1.0;
       this.stutter = false;
       this.chance = 0.0;
+      this.drip = 0.15;
     };
     let text, gui;
 
@@ -84,6 +86,7 @@
       gui.add(text, 'feedback', 0.92, 1.08);
       gui.add(text, 'stutter');
       gui.add(text, 'chance', 0, 1);
+      gui.add(text, 'drip', 0, 1);
 
       // define drawing area of webgl canvas. bottom corner, width / height
       // XXX can't remember why we need the *2!
@@ -148,8 +151,12 @@
       uFeedback = gl.getUniformLocation( feedbackProgram, 'speed' )
       gl.uniform1f( uSpeed, .5 )
 
+      uFeedback = gl.getUniformLocation( feedbackProgram, 'drip' )
+      gl.uniform1f( uDrip, .5 )
+
       // find a pointer to the uniform "time" in our fragment shader
       uTime = gl.getUniformLocation( feedbackProgram, 'time' )
+      uDrip = gl.getUniformLocation( feedbackProgram, 'drip' )
 
       // one texture for feedback, one for video. There will actually be
       // a third texture involved, but we'll only need to access two in our
@@ -275,6 +282,7 @@ function render() {
   // update time on CPU and GPU
   time++
   gl.uniform1f( uTime, time )     
+  gl.uniform1f(uDrip, text.drip)
   gl.bindFramebuffer( gl.FRAMEBUFFER, framebuffer )
   // use the framebuffer to write to our texFront texture
   gl.framebufferTexture2D( gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, textureFront, 0 )

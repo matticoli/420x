@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang='en'>
+  <head>
+    <style>
+        body{ 
+              margin:0;
+              background:rgb(46, 43, 43);
+              color: white;
+              padding: 30px;
+              font-family: Arial, Helvetica, sans-serif;
+              font-size: 1em;
+            }
+        
+            video {
+                max-width: calc(50vw - 30px);
+                display: inline-block;
+            }
+
+            td {
+                border: none;
+            }
+            td {
+                vertical-align: center;
+            }
+    </style>
+  </head>
+  <body>
+    <h2>Final: Unity Simulation Shaders</h2>
+    <p>This collection of shaders was used in the game <a href="https://buriedvoices.github.io/">Buried Voices</a> in order to provide different visual effects.</p>
+    
+    <table>
+        <tr>
+            <td>
+                <h3>Transparent Dissolve Frag/Vertex Shaders</h3>
+                <p>This material consist of a fragment and vertex shader, and is a reimplementation of the dissolve algorithm from <a href="https://gist.github.com/benloong/b25066cb140398b402f2ad8295a28d42">benloong's surface dissolve shader.</a> Most of the dissolve shaders available had only support for opaque models/textures, with just an albedo channel. This material exposes several additional properties: an HDR color tint, and a normal map, and scroll parameters. Rather than implement full normal map support in the vertex shader, the rgb output of the frag shader is darkened based off of the normal map in order to create a "convincing enough" illusion of depth. Most importantly, the render type for the shader is set to transparent, which allows the alpha on the HDR tint to control the transparency of the fog. The material samples 3 noise textures for the albedo (fog pattern), normals, and the edges (using a simple cutout threshhold). Combined with a simple Unity script to interpolate the dissolution parameter over time, this creates a neat floating fog effect that can dissolve in and out smoothly. </p>
+            </td>
+            <td>
+                <img height=400 src="./assets/images/transparent_dissolve.png" />
+            </td>
+        </tr>
+        <tr>
+        <td>
+            <a href="https://gyazo.com/326a73de9754ac8ca5ed6e756eaf514e"><video alt="Video from Gyazo" width="905" autoplay muted loop playsinline controls><source src="https://i.gyazo.com/326a73de9754ac8ca5ed6e756eaf514e.mp4" type="video/mp4" /></video></a>
+        </td>
+        <td>
+            <a href="https://gyazo.com/326a73de9754ac8ca5ed6e756eaf514e"><video alt="Video from Gyazo" width="905" autoplay muted loop playsinline controls><source src="./assets/fog_dissolve.mp4" type="video/mp4" /></video></a>
+        </td>
+    </tr>
+        <tr>
+            <td>
+                <h3>Surface Dissolve Shader with Proper Normal Map Support</h3>
+                <p>This latter variant accomplishes a similar dissolution effect, but is implemented as a Unity Surface shader to allow for proper use of normal maps. While this did not allow for an easy implementation of the transparency and color tint effects of the TransparentDissolve shader, it made integrating normal maps correctly considerably easier compared to the fragment shader approach. This shader was heavily inspired by <a href="https://assetstore.unity.com/packages/vfx/shaders/ultimate-10-shaders-168611">The Developer's Dissolve Shader</a>, and utilizes their implementation of the edge cutoff for the dissolution effect, with modifications to allow HDR color instead of standard color tinting for the edges.
+                </p>
+                
+            </td>
+
+            <td>
+            <a href="https://gyazo.com/6f039a6b0d2ebb4c1bca152f72ea1e53"><video alt="Video from Gyazo" width="905" autoplay muted loop playsinline controls><source src="https://gyazo.com/6f039a6b0d2ebb4c1bca152f72ea1e53.mp4" type="video/mp4" /></video></a>
+        </td>
+        <td>
+            <!-- <a href="https://gyazo.com/326a73de9754ac8ca5ed6e756eaf514e"><video alt="Video from Gyazo" width="905" autoplay muted loop playsinline controls><source src="./assets/fog_dissolve.mp4" type="video/mp4" /></video></a> -->
+        </td>
+    </tr>
+</table>
+<table>
+    <tr>
+        <td>
+            <h3>Fun with Lightmaps</h3>
+            <p>Admittedly, this one was more of a happy accident but was cool enough to include here. At first glance, it seems like a rogue shader messing up the color spaces from the underlying textures. As it turns out however, this issue was produced by a lack of textures in the scene, due to a file permissions issue that excluded the textures from the build. The look comes solely from the baked lightmap - since most of the objects in the scene are static or have partially static lighting, the variations in reflected light from the geometry as well as the albedo and normal maps on these objects got baked into the lightmap, which was included in the build and applied in the absence of textures. The result is only the lighting tint being shown (hence the majority of it being red/yellow in this area of the map that utilizes warm outdoor lighting from the sky dome). A bit of a pain to troubleshoot, but a cool effect for sure and potentially a proof-of-concept for a neat form of glitch art.</p>
+        </td>
+        <td>
+            <a href="https://i.gyazo.com/38d144e476b7973bcc1f90eadd551ec9"><video alt="Video from Gyazo" width="905" autoplay muted loop playsinline controls><source src="https://i.gyazo.com/38d144e476b7973bcc1f90eadd551ec9.mp4" type="video/mp4" /></video></a>
+        </td>
+    </tr>
+</table>
+  </body>
+</html>
